@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS deps
+FROM golang:1.25-alpine AS deps
 
 RUN apk add --no-cache ca-certificates tzdata
 
@@ -11,7 +11,7 @@ COPY go.mod go.sum ./
 
 RUN go mod download || (sleep 5 && go mod download) || go mod download
 
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ARG VERSION=dev
 ARG BUILD_DATE
