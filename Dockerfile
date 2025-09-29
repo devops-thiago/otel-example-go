@@ -26,7 +26,6 @@ ENV GOOS=linux
 ENV GOARCH=amd64
 
 COPY --from=deps /go/pkg /go/pkg
-COPY --from=deps /go/pkg /go/pkg
 COPY go.mod go.sum ./
 
 COPY cmd/api/main.go ./cmd/api/
@@ -71,7 +70,7 @@ RUN apk --no-cache add ca-certificates tzdata wget && \
 
 WORKDIR /app
 
-COPY --from=builder --chown=appuser:appuser /app/api .
+COPY --from=builder --chown=appuser:appuser --chmod=555 /app/api .
 COPY --from=deps /usr/share/zoneinfo /usr/share/zoneinfo
 
 USER appuser
