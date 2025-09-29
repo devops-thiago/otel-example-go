@@ -4,7 +4,7 @@ go 1.24.5
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/XSAM/otelsql v0.27.0
+	github.com/XSAM/otelsql v0.40.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/joho/godotenv v1.5.1
