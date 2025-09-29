@@ -41,7 +41,7 @@ COPY pkg/utils/*.go ./pkg/utils/
 RUN find . -name '*_test.go' -type f -delete
 
 RUN go build -a -installsuffix cgo \
-    -ldflags="-w -s -X main.version=${VERSION} -X main.buildDate=${BUILD_DATE} -X main.gitCommit=${VCS_REF}" \
+    -ldflags="-w -s" \
     -o api ./cmd/api && \
     test -f api
 
