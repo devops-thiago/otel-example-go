@@ -1,17 +1,15 @@
-version: 2
+version: "2"
 
 run:
   timeout: 5m
 
 linters:
   enable:
-    - govet
     - errcheck
-    - staticcheck
+    - govet
     - ineffassign
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
+    - staticcheck
+    - unused
+    - goconst
+    - gocyclo
+    - misspell

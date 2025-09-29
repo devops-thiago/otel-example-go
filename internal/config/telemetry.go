@@ -19,7 +19,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
-// TelemetryConfig holds telemetry configuration
+const defaultEnabledValue = "true"
+
 type TelemetryConfig struct {
 	ServiceName          string
 	ServiceVersion       string
@@ -211,9 +212,9 @@ func GetTelemetryConfig() *TelemetryConfig {
 		ServiceVersion:       getEnv("OTEL_SERVICE_VERSION", "1.0.0"),
 		Environment:          getEnv("OTEL_ENVIRONMENT", getEnv("APP_ENV", "development")),
 		OTLPGRPCEndpoint:     getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
-		EnableMetrics:        getEnv("OTEL_ENABLE_METRICS", "true") == "true",
-		EnableTracing:        getEnv("OTEL_ENABLE_TRACING", "true") == "true",
-		EnableLogging:        getEnv("OTEL_ENABLE_LOGGING", "true") == "true",
-		EnableRuntimeMetrics: getEnv("OTEL_ENABLE_RUNTIME_METRICS", "true") == "true",
+		EnableMetrics:        getEnv("OTEL_ENABLE_METRICS", defaultEnabledValue) == defaultEnabledValue,
+		EnableTracing:        getEnv("OTEL_ENABLE_TRACING", defaultEnabledValue) == defaultEnabledValue,
+		EnableLogging:        getEnv("OTEL_ENABLE_LOGGING", defaultEnabledValue) == defaultEnabledValue,
+		EnableRuntimeMetrics: getEnv("OTEL_ENABLE_RUNTIME_METRICS", defaultEnabledValue) == defaultEnabledValue,
 	}
 }
