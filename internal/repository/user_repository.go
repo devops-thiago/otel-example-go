@@ -28,6 +28,18 @@ func NewUserRepository(db *database.DB) *UserRepository {
 	}
 }
 
+// UserStore defines the behavior required by user data operations. It enables
+// mocking in unit tests without depending on a real database.
+type UserStore interface {
+    GetAll(ctx context.Context, limit, offset int) ([]models.User, error)
+    GetByID(ctx context.Context, id int) (*models.User, error)
+    Create(ctx context.Context, req models.CreateUserRequest) (*models.User, error)
+    Update(ctx context.Context, id int, req models.UpdateUserRequest) (*models.User, error)
+    Delete(ctx context.Context, id int) error
+    Count(ctx context.Context) (int, error)
+    GetByEmail(ctx context.Context, email string) (*models.User, error)
+}
+
 // GetAll retrieves all users with pagination
 func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]models.User, error) {
 	ctx, span := r.tracer.Start(ctx, "UserRepository.GetAll")
@@ -245,8 +257,10 @@ func (r *UserRepository) Update(ctx context.Context, id int, req models.UpdateUs
 	}
 	query += " WHERE id = ?"
 
+	start := time.Now()
 	_, err = r.db.ExecContext(ctx, query, args...)
-	r.db.RecordQueryMetrics(ctx, query, err)
+	duration := time.Since(start)
+	r.db.RecordQueryMetrics(ctx, "UPDATE", "users", duration, err)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
@@ -274,7 +288,8 @@ func (r *UserRepository) Delete(ctx context.Context, id int) error {
 	query := "DELETE FROM users WHERE id = ?"
 	start := time.Now()
 	_, err = r.db.ExecContext(ctx, query, id)
-	r.db.RecordQueryMetrics(ctx, query, start, err)
+	duration := time.Since(start)
+	r.db.RecordQueryMetrics(ctx, "DELETE", "users", duration, err)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
@@ -296,8 +311,10 @@ func (r *UserRepository) Count(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM users"
 
 	var count int
+	start := time.Now()
 	err := r.db.QueryRowContext(ctx, query).Scan(&count)
-	r.db.RecordQueryMetrics(ctx, query, err)
+	duration := time.Since(start)
+	r.db.RecordQueryMetrics(ctx, "SELECT", "users", duration, err)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count users: %w", err)
 	}
@@ -324,6 +341,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 	`
 
 	var user models.User
+	start := time.Now()
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
@@ -332,9 +350,10 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
+	duration := time.Since(start)
 
 	// Record database query metrics
-	r.db.RecordQueryMetrics(ctx, query, err)
+	r.db.RecordQueryMetrics(ctx, "SELECT", "users", duration, err)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			span.SetAttributes(attribute.Bool("user.found", false))

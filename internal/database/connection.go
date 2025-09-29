@@ -17,6 +17,48 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
+// DatabaseConnector interface for testability
+type DatabaseConnector interface {
+	Open(driverName, dataSourceName string, options ...otelsql.Option) (*sql.DB, error)
+	RegisterDBStatsMetrics(db *sql.DB, options ...otelsql.Option) error
+}
+
+// MeterProvider interface for testability  
+type MeterProvider interface {
+	Meter(name string, options ...metric.MeterOption) metric.Meter
+}
+
+// MetricsFactory creates OpenTelemetry metrics
+type MetricsFactory interface {
+	CreateMetrics(meter metric.Meter) (*DBMetrics, error)
+}
+
+// DBMetrics holds all database-related metrics
+type DBMetrics struct {
+	QueryDuration       metric.Float64Histogram
+	QueryCount          metric.Int64Counter
+	QueryErrors         metric.Int64Counter
+	ConnectionCount     metric.Int64UpDownCounter
+	ConnectionErrors    metric.Int64Counter
+	HealthCheckDuration metric.Float64Histogram
+}
+
+// ConnectionConfig holds database connection configuration
+type ConnectionConfig struct {
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+}
+
+// DefaultConnectionConfig returns sensible defaults
+func DefaultConnectionConfig() ConnectionConfig {
+	return ConnectionConfig{
+		MaxOpenConns:    25,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: 5 * time.Minute,
+	}
+}
+
 // DB holds the database connection with metrics
 type DB struct {
 	*sql.DB
@@ -29,10 +71,109 @@ type DB struct {
 	healthCheckDuration metric.Float64Histogram
 }
 
-// NewConnection creates a new database connection with OpenTelemetry instrumentation
+// OtelDatabaseConnector implements DatabaseConnector using otelsql
+type OtelDatabaseConnector struct{}
+
+func (o *OtelDatabaseConnector) Open(driverName, dataSourceName string, options ...otelsql.Option) (*sql.DB, error) {
+	return otelsql.Open(driverName, dataSourceName, options...)
+}
+
+func (o *OtelDatabaseConnector) RegisterDBStatsMetrics(db *sql.DB, options ...otelsql.Option) error {
+	return otelsql.RegisterDBStatsMetrics(db, options...)
+}
+
+// OtelMeterProvider implements MeterProvider using otel
+type OtelMeterProvider struct{}
+
+func (o *OtelMeterProvider) Meter(name string, options ...metric.MeterOption) metric.Meter {
+	return otel.Meter(name, options...)
+}
+
+// DefaultMetricsFactory implements MetricsFactory
+type DefaultMetricsFactory struct{}
+
+func (f *DefaultMetricsFactory) CreateMetrics(meter metric.Meter) (*DBMetrics, error) {
+	queryDuration, err := meter.Float64Histogram(
+		"db.query.duration",
+		metric.WithDescription("Database query duration in seconds"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create query duration metric: %w", err)
+	}
+
+	queryCount, err := meter.Int64Counter(
+		"db.query.count",
+		metric.WithDescription("Total number of database queries"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create query count metric: %w", err)
+	}
+
+	queryErrors, err := meter.Int64Counter(
+		"db.query.errors",
+		metric.WithDescription("Total number of database query errors"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create query errors metric: %w", err)
+	}
+
+	connectionCount, err := meter.Int64UpDownCounter(
+		"db.connections.active",
+		metric.WithDescription("Number of active database connections"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection count metric: %w", err)
+	}
+
+	connectionErrors, err := meter.Int64Counter(
+		"db.connection.errors",
+		metric.WithDescription("Total number of database connection errors"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection errors metric: %w", err)
+	}
+
+	healthCheckDuration, err := meter.Float64Histogram(
+		"db.health_check.duration",
+		metric.WithDescription("Database health check duration in seconds"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create health check duration metric: %w", err)
+	}
+
+	return &DBMetrics{
+		QueryDuration:       queryDuration,
+		QueryCount:          queryCount,
+		QueryErrors:         queryErrors,
+		ConnectionCount:     connectionCount,
+		ConnectionErrors:    connectionErrors,
+		HealthCheckDuration: healthCheckDuration,
+	}, nil
+}
+
+// NewConnection creates a new database connection with default providers
 func NewConnection(cfg *config.Config) (*DB, error) {
-	// Open connection using the instrumented mysql driver with XSAM/otelsql
-	db, err := otelsql.Open("mysql", cfg.Database.DSN,
+	return NewConnectionWithDeps(
+		cfg,
+		&OtelDatabaseConnector{},
+		&OtelMeterProvider{},
+		&DefaultMetricsFactory{},
+		DefaultConnectionConfig(),
+	)
+}
+
+// NewConnectionWithDeps creates a new database connection with dependency injection for testing
+func NewConnectionWithDeps(
+	cfg *config.Config,
+	connector DatabaseConnector,
+	meterProvider MeterProvider,
+	metricsFactory MetricsFactory,
+	connCfg ConnectionConfig,
+) (*DB, error) {
+	// Open connection using the provided connector
+	db, err := connector.Open("mysql", cfg.Database.DSN,
 		otelsql.WithAttributes(
 			semconv.DBSystemMySQL,
 			semconv.DBName(cfg.Database.Name),
@@ -51,9 +192,10 @@ func NewConnection(cfg *config.Config) (*DB, error) {
 	}
 
 	// Configure connection pool
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	err = configureConnectionPool(db, connCfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to configure connection pool: %w", err)
+	}
 
 	// Test the connection
 	if err := db.Ping(); err != nil {
@@ -61,7 +203,7 @@ func NewConnection(cfg *config.Config) (*DB, error) {
 	}
 
 	// Register database stats for metrics collection
-	err = otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+	err = connector.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		semconv.DBSystemMySQL,
 		semconv.DBName(cfg.Database.Name),
 	))
@@ -69,71 +211,44 @@ func NewConnection(cfg *config.Config) (*DB, error) {
 		log.Printf("Warning: Failed to register database stats metrics: %v", err)
 	}
 
-	// Create meter for custom metrics
-	meter := otel.Meter("database")
-
-	// Create custom metrics
-	queryDuration, err := meter.Float64Histogram(
-		"db.query.duration",
-		metric.WithDescription("Database query duration in seconds"),
-		metric.WithUnit("s"),
-	)
+	// Create meter and metrics
+	dbInstance, err := createDBWithMetrics(db, meterProvider, metricsFactory)
 	if err != nil {
-		log.Printf("Warning: Failed to create query duration metric: %v", err)
-	}
-
-	queryCount, err := meter.Int64Counter(
-		"db.query.count",
-		metric.WithDescription("Total number of database queries"),
-	)
-	if err != nil {
-		log.Printf("Warning: Failed to create query count metric: %v", err)
-	}
-
-	queryErrors, err := meter.Int64Counter(
-		"db.query.errors",
-		metric.WithDescription("Total number of database query errors"),
-	)
-	if err != nil {
-		log.Printf("Warning: Failed to create query errors metric: %v", err)
-	}
-
-	connectionCount, err := meter.Int64UpDownCounter(
-		"db.connections.active",
-		metric.WithDescription("Number of active database connections"),
-	)
-	if err != nil {
-		log.Printf("Warning: Failed to create connection count metric: %v", err)
-	}
-
-	connectionErrors, err := meter.Int64Counter(
-		"db.connection.errors",
-		metric.WithDescription("Total number of database connection errors"),
-	)
-	if err != nil {
-		log.Printf("Warning: Failed to create connection errors metric: %v", err)
-	}
-
-	healthCheckDuration, err := meter.Float64Histogram(
-		"db.health_check.duration",
-		metric.WithDescription("Database health check duration in seconds"),
-		metric.WithUnit("s"),
-	)
-	if err != nil {
-		log.Printf("Warning: Failed to create health check duration metric: %v", err)
+		return nil, fmt.Errorf("failed to create database with metrics: %w", err)
 	}
 
 	log.Println("Successfully connected to database with comprehensive OpenTelemetry instrumentation")
+	return dbInstance, nil
+}
+
+// configureConnectionPool configures the database connection pool
+func configureConnectionPool(db *sql.DB, config ConnectionConfig) error {
+	db.SetMaxOpenConns(config.MaxOpenConns)
+	db.SetMaxIdleConns(config.MaxIdleConns)
+	db.SetConnMaxLifetime(config.ConnMaxLifetime)
+	return nil
+}
+
+// createDBWithMetrics creates a DB instance with OpenTelemetry metrics
+func createDBWithMetrics(db *sql.DB, meterProvider MeterProvider, metricsFactory MetricsFactory) (*DB, error) {
+	// Create meter for custom metrics
+	meter := meterProvider.Meter("database")
+
+	// Create custom metrics
+	metrics, err := metricsFactory.CreateMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create metrics: %w", err)
+	}
 
 	return &DB{
 		DB:                  db,
 		meter:               meter,
-		queryDuration:       queryDuration,
-		queryCount:          queryCount,
-		queryErrors:         queryErrors,
-		connectionCount:     connectionCount,
-		connectionErrors:    connectionErrors,
-		healthCheckDuration: healthCheckDuration,
+		queryDuration:       metrics.QueryDuration,
+		queryCount:          metrics.QueryCount,
+		queryErrors:         metrics.QueryErrors,
+		connectionCount:     metrics.ConnectionCount,
+		connectionErrors:    metrics.ConnectionErrors,
+		healthCheckDuration: metrics.HealthCheckDuration,
 	}, nil
 }
 

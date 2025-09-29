@@ -1666,7 +1666,7 @@
         "includeAll": true,
         "multi": true,
         "name": "job",
-        "query": "label_values(http_requests_total, job)",
+        "query": "label_values(target_info, job)",
         "refresh": 1,
         "regex": ".*",
         "type": "query",

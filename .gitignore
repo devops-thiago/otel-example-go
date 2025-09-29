@@ -1,0 +1,174 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go build cache
+bin/
+dist/
+
+# Test coverage
+coverage.out
+coverage.html
+*.cover
+*.coverprofile
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Debug
+__debug_bin
+
+# Logs
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker volumes
+docker-volumes/
+data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Air live reload
+.air.toml
+tmp/
+
+# Delve debugger
+debug
+
+# Test artifacts
+test_api.sh
+
+# OpenTelemetry/Observability specific
+traces/
+metrics/
+.otlp/
+
+# Configuration overrides
+*-local.yml
+*-local.yaml
+config.local.yaml
+config.local.yml
+
+# Binary outputs from go build
+/api
+/otel-example-go
+cmd/api/api
+cmd/*/main
+
+# profiling
+*.pprof
+*.prof
+
+# Archives
+*.tar.gz
+*.zip
+
+# Certificates
+*.pem
+*.key
+*.crt
+*.csr
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Jetbrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+tags
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+.org-id-locations
+*_archive
+*_flymake.*
+/eshell/history
+/eshell/lastdir
+/elpa/
+*.rel
+/auto/
+.cask/
+dist/
+flycheck_*.el
+.projectile
+.dir-locals.el
+/network-security.data

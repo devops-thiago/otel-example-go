@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+      - name: Go env
+        run: |
+          go env
+          go version
+      - name: Download deps
+        run: GOPROXY=direct GOSUMDB=off go mod download
+      - name: Test with coverage
+        run: |
+          GOPROXY=direct GOSUMDB=off go test ./... -coverpkg=./... -coverprofile=coverage.out -count=1
+          go tool cover -func=coverage.out | tail -n 1
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.out
+          fail_ci_if_error: false
+        if: ${{ always() }}
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=devops-thiago_otel-example-go
+            -Dsonar.organization=devops-thiago
+            -Dsonar.go.coverage.reportPaths=coverage.out
+        if: ${{ env.SONAR_TOKEN != '' }}
+
+

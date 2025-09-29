@@ -29,11 +29,11 @@ func SetupRoutes(db *database.DB) *gin.Engine {
 	router.Use(middleware.ErrorHandler())
 
 	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
+    userRepo := repository.NewUserRepository(db)
 
 	// Initialize handlers
-	healthHandler := NewHealthHandler(db)
-	userHandler := NewUserHandler(userRepo)
+    healthHandler := NewHealthHandler(db)
+    userHandler := NewUserHandler(userRepo)
 	metricsHandler := NewMetricsHandler(db)
 
 	// Health check routes

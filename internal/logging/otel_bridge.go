@@ -2,6 +2,7 @@ package logging
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -17,6 +18,9 @@ type OtelHook struct {
 
 // NewOtelHook creates a new OpenTelemetry hook for Logrus
 func NewOtelHook(loggerProvider *sdklog.LoggerProvider) *OtelHook {
+	if loggerProvider == nil {
+		return &OtelHook{logger: nil}
+	}
 	return &OtelHook{
 		logger: loggerProvider.Logger("otel-example-api"),
 	}
@@ -36,6 +40,10 @@ func (hook *OtelHook) Levels() []logrus.Level {
 
 // Fire is called when a log entry is made
 func (hook *OtelHook) Fire(entry *logrus.Entry) error {
+	if hook.logger == nil {
+		return nil // silently skip if no logger provider
+	}
+	
 	// Convert logrus level to OpenTelemetry severity
 	severity := hook.convertLevel(entry.Level)
 
@@ -126,10 +134,7 @@ func (hook *OtelHook) convertLevel(level logrus.Level) log.Severity {
 
 // toString converts any value to string
 func toString(value interface{}) string {
-	if str, ok := value.(string); ok {
-		return str
-	}
-	return ""
+	return fmt.Sprintf("%v", value)
 }
 
 // AddOtelHook adds the OpenTelemetry hook to a Logrus logger

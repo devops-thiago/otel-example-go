@@ -18,11 +18,11 @@ import (
 
 // UserHandler handles user-related HTTP requests
 type UserHandler struct {
-	userRepo *repository.UserRepository
+    userRepo repository.UserStore
 }
 
 // NewUserHandler creates a new user handler
-func NewUserHandler(userRepo *repository.UserRepository) *UserHandler {
+func NewUserHandler(userRepo repository.UserStore) *UserHandler {
 	return &UserHandler{
 		userRepo: userRepo,
 	}
