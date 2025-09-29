@@ -333,6 +333,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 		&user.UpdatedAt,
 	)
 
+	// Record database query metrics
+	r.db.RecordQueryMetrics(ctx, query, err)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			span.SetAttributes(attribute.Bool("user.found", false))
