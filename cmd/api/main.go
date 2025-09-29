@@ -51,7 +51,7 @@ func main() {
 		"runtime_metrics_enabled": telemetryCfg.EnableRuntimeMetrics,
 	}).Info("OpenTelemetry initialized successfully")
 
-	logger.WithFields(map[string]interface{}
+	logger.WithFields(map[string]interface{}{
 		"enable_logging":      telemetryCfg.EnableLogging,
 		"logger_provider_nil": telemetryProvider.LoggerProvider == nil,
 	}).Info("Checking logging configuration")
