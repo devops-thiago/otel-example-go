@@ -1,0 +1,218 @@
+services:
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password123
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+
+  minio-setup:
+    image: quay.io/minio/mc:latest
+    container_name: minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio:9000 admin password123;
+      /usr/bin/mc mb minio/tempo-data;
+      /usr/bin/mc mb minio/mimir-data;
+      /usr/bin/mc mb minio/loki-data;
+      /usr/bin/mc mb minio/ruler-data;
+      /usr/bin/mc mb minio/alertmanager-data;
+      exit 0;
+      "
+    networks:
+      - app-network
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    command:
+      - "-config.file=/etc/tempo.yaml"
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      minio-setup:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  mimir:
+    image: grafana/mimir-alpine:latest
+    container_name: mimir
+    ports:
+      - "9009:9009"
+    command:
+      - "-config.file=/etc/mimir.yaml"
+    volumes:
+      - ./config/mimir.yaml:/etc/mimir.yaml
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9009/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      minio-setup:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command:
+      - "-config.file=/etc/loki.yaml"
+    volumes:
+      - ./config/loki.yaml:/etc/loki.yaml
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      minio-setup:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    ports:
+      - "12345:12345"
+      - "4320:4320"
+      - "4321:4321"
+      - "9464:9464"
+    command:
+      - "run"
+      - "/etc/alloy/config.alloy"
+      - "--server.http.listen-addr=0.0.0.0:12345"
+      - "--storage.path=/var/lib/alloy/data"
+    volumes:
+      - ./config/alloy.alloy:/etc/alloy/config.alloy
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      tempo:
+        condition: service_healthy
+      mimir:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      tempo:
+        condition: service_healthy
+      mimir:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    networks:
+      - app-network
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: otel_example
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=appuser
+      - DB_PASSWORD=apppassword
+      - DB_NAME=otel_example
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - APP_ENV=production
+      - LOG_LEVEL=info
+      # OpenTelemetry Configuration
+      - OTEL_SERVICE_NAME=otel-example-api
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_ENVIRONMENT=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=alloy:4320
+      - OTEL_ENABLE_METRICS=true
+      - OTEL_ENABLE_TRACING=true
+      - OTEL_ENABLE_LOGGING=true
+      - OTEL_ENABLE_RUNTIME_METRICS=true
+    depends_on:
+      mysql:
+        condition: service_healthy
+      alloy:
+        condition: service_started
+    networks:
+      - app-network
+
+# Define volumes
+volumes:
+  mysql_data:
+  minio_data:
+  alloy_data:
+  grafana_data:
+# Define networks
+networks:
+  app-network:
+    driver: bridge

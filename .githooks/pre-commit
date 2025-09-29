@@ -1,0 +1,48 @@
+#!/bin/bash
+# Pre-commit hook for Go projects
+# To use: ln -s ../../.githooks/pre-commit .git/hooks/pre-commit
+
+echo "Running pre-commit checks..."
+
+# Remove trailing whitespaces
+echo "Removing trailing whitespaces..."
+find . -type f \( -name "*.go" -o -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.json" -o -name "*.sh" -o -name "Makefile" -o -name "Dockerfile" \) ! -path "./vendor/*" ! -path "./.git/*" -exec sed -i 's/[[:space:]]*$//' {} +
+echo "✅ Trailing whitespaces removed"
+
+# Check formatting
+echo "Checking formatting..."
+unformatted=$(gofmt -s -l .)
+if [ -n "$unformatted" ]; then
+    echo "❌ The following files need formatting:"
+    echo "$unformatted"
+    echo "Run 'make fmt' to fix formatting issues"
+    exit 1
+fi
+echo "✅ Formatting check passed"
+
+# Run go vet
+echo "Running go vet..."
+if ! go vet ./...; then
+    echo "❌ go vet failed"
+    exit 1
+fi
+echo "✅ go vet passed"
+
+# Run tests
+echo "Running tests..."
+if ! go test -short ./...; then
+    echo "❌ Tests failed"
+    exit 1
+fi
+echo "✅ Tests passed"
+
+# Check go mod tidy
+echo "Checking go mod tidy..."
+go mod tidy
+if ! git diff --quiet go.mod go.sum; then
+    echo "❌ go mod tidy made changes - please run 'go mod tidy' and stage the changes"
+    exit 1
+fi
+echo "✅ go mod tidy check passed"
+
+echo "All pre-commit checks passed! ✅"
