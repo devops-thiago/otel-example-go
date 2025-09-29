@@ -70,7 +70,7 @@ RUN apk --no-cache add ca-certificates tzdata wget && \
 
 WORKDIR /app
 
-COPY --from=builder --chown=appuser:appuser --chmod=555 /app/api .
+COPY --from=builder --chown=root:root --chmod=755 /app/api .
 COPY --from=deps /usr/share/zoneinfo /usr/share/zoneinfo
 
 USER appuser
