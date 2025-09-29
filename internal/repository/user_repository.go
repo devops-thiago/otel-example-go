@@ -272,7 +272,9 @@ func (r *UserRepository) Delete(ctx context.Context, id int) error {
 	}
 
 	query := "DELETE FROM users WHERE id = ?"
+	start := time.Now()
 	_, err = r.db.ExecContext(ctx, query, id)
+	r.db.RecordQueryMetrics(ctx, query, start, err)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
