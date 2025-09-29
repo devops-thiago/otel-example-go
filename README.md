@@ -1,10 +1,10 @@
 # OpenTelemetry Go Example
 
-[![CI](https://img.shields.io/github/actions/workflow/status/thiagorb/otel-example-go/ci.yml?branch=main&label=CI)](https://github.com/thiagorb/otel-example-go/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/devops-thiago/otel-example-go/ci.yml?branch=main&label=CI)](https://github.com/devops-thiago/otel-example-go/actions)
 [![Go Version](https://img.shields.io/badge/go-1.24.x-00ADD8?logo=go)](https://golang.org)
-[![Go Report Card](https://goreportcard.com/badge/github.com/thiagorb/otel-example-go)](https://goreportcard.com/report/github.com/thiagorb/otel-example-go)
-[![License](https://img.shields.io/github/license/thiagorb/otel-example-go)](LICENSE)
-[![Codecov](https://img.shields.io/codecov/c/github/thiagorb/otel-example-go?label=coverage)](https://app.codecov.io/gh/thiagorb/otel-example-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/devops-thiago/otel-example-go)](https://goreportcard.com/report/github.com/devops-thiago/otel-example-go)
+[![License](https://img.shields.io/github/license/devops-thiago/otel-example-go)](LICENSE)
+[![Codecov](https://img.shields.io/codecov/c/github/devops-thiago/otel-example-go?label=coverage)](https://app.codecov.io/gh/devops-thiago/otel-example-go)
 [![Sonar Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=devops-thiago_otel-example-go&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=devops-thiago_otel-example-go)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=devops-thiago_otel-example-go&metric=coverage)](https://sonarcloud.io/summary/new_code?id=devops-thiago_otel-example-go)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-enabled-blue?logo=opentelemetry)](https://opentelemetry.io)
@@ -53,7 +53,7 @@ A production-ready Go REST API with comprehensive OpenTelemetry instrumentation,
 
 ```bash
 # Clone the repository
-git clone https://github.com/thiagorb/otel-example-go.git
+git clone https://github.com/devops-thiago/otel-example-go.git
 cd otel-example-go
 
 # Start everything with docker-compose
