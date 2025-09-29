@@ -479,18 +479,6 @@ When code is merged to main:
 5. Security scanning with Trivy
 6. SBOM (Software Bill of Materials) generation
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [OpenTelemetry](https://opentelemetry.io) for the observability framework
-- [Gin Web Framework](https://gin-gonic.com) for the HTTP router
-- [GORM](https://gorm.io) community for database patterns
-
-## 📞 Support
-
-- 📧 Email: support@arquivolivre.com.br
-- 💬 Issues: [GitHub Issues](https://github.com/thiagorb/otel-example-go/issues)
-- 📖 Docs: [Wiki](https://github.com/thiagorb/otel-example-go/wiki)
+This project is licensed under the MIT License - see the LICENSE file for details.
