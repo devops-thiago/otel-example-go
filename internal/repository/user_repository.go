@@ -246,6 +246,7 @@ func (r *UserRepository) Update(ctx context.Context, id int, req models.UpdateUs
 	query += " WHERE id = ?"
 
 	_, err = r.db.ExecContext(ctx, query, args...)
+	r.db.RecordQueryMetrics(ctx, query, err)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
