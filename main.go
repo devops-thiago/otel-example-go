@@ -8,10 +8,8 @@ import (
 )
 
 func main() {
-	// This is a wrapper that runs the actual API server
 	fmt.Println("Starting OpenTelemetry Example API...")
 
-	// Run the API server
 	cmd := exec.Command("go", "run", "./cmd/api/main.go")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

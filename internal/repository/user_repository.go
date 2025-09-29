@@ -6,21 +6,19 @@ import (
 	"fmt"
 	"time"
 
-	"example/otel/internal/database"
-	"example/otel/internal/models"
+	"arquivolivre.com.br/otel/internal/database"
+	"arquivolivre.com.br/otel/internal/models"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
-// UserRepository handles user data operations
 type UserRepository struct {
 	db     *database.DB
 	tracer trace.Tracer
 }
 
-// NewUserRepository creates a new user repository
 func NewUserRepository(db *database.DB) *UserRepository {
 	return &UserRepository{
 		db:     db,
@@ -28,19 +26,16 @@ func NewUserRepository(db *database.DB) *UserRepository {
 	}
 }
 
-// UserStore defines the behavior required by user data operations. It enables
-// mocking in unit tests without depending on a real database.
 type UserStore interface {
-    GetAll(ctx context.Context, limit, offset int) ([]models.User, error)
-    GetByID(ctx context.Context, id int) (*models.User, error)
-    Create(ctx context.Context, req models.CreateUserRequest) (*models.User, error)
-    Update(ctx context.Context, id int, req models.UpdateUserRequest) (*models.User, error)
-    Delete(ctx context.Context, id int) error
-    Count(ctx context.Context) (int, error)
-    GetByEmail(ctx context.Context, email string) (*models.User, error)
+	GetAll(ctx context.Context, limit, offset int) ([]models.User, error)
+	GetByID(ctx context.Context, id int) (*models.User, error)
+	Create(ctx context.Context, req models.CreateUserRequest) (*models.User, error)
+	Update(ctx context.Context, id int, req models.UpdateUserRequest) (*models.User, error)
+	Delete(ctx context.Context, id int) error
+	Count(ctx context.Context) (int, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
-// GetAll retrieves all users with pagination
 func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]models.User, error) {
 	ctx, span := r.tracer.Start(ctx, "UserRepository.GetAll")
 	defer span.End()
@@ -53,25 +48,23 @@ func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]model
 	)
 
 	query := `
-		SELECT id, name, email, bio, created_at, updated_at 
-		FROM users 
-		ORDER BY created_at DESC 
+		SELECT id, name, email, bio, created_at, updated_at
+		FROM users
+		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?
 	`
 
-	// Record query metrics
 	start := time.Now()
 	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	duration := time.Since(start)
 
-	// Record database metrics
 	r.db.RecordQueryMetrics(ctx, "SELECT", "users", duration, err)
 
 	if err != nil {
 		span.SetAttributes(attribute.Bool("db.query.success", false))
 		return nil, fmt.Errorf("failed to query users: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var users []models.User
 	for rows.Next() {
@@ -96,7 +89,6 @@ func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]model
 		return nil, fmt.Errorf("error iterating over users: %w", err)
 	}
 
-	// Add result count to span
 	span.SetAttributes(
 		attribute.Int("result.count", len(users)),
 		attribute.Bool("db.query.success", true),
@@ -105,7 +97,6 @@ func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]model
 	return users, nil
 }
 
-// GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(ctx context.Context, id int) (*models.User, error) {
 	ctx, span := r.tracer.Start(ctx, "UserRepository.GetByID")
 	defer span.End()
@@ -117,12 +108,11 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*models.User, err
 	)
 
 	query := `
-		SELECT id, name, email, bio, created_at, updated_at 
-		FROM users 
+		SELECT id, name, email, bio, created_at, updated_at
+		FROM users
 		WHERE id = ?
 	`
 
-	// Record query metrics
 	start := time.Now()
 	row := r.db.QueryRowContext(ctx, query, id)
 	duration := time.Since(start)
@@ -137,7 +127,6 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*models.User, err
 		&user.UpdatedAt,
 	)
 
-	// Record database metrics
 	r.db.RecordQueryMetrics(ctx, "SELECT", "users", duration, err)
 
 	if err != nil {
@@ -159,7 +148,6 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*models.User, err
 	return &user, nil
 }
 
-// Create creates a new user
 func (r *UserRepository) Create(ctx context.Context, req models.CreateUserRequest) (*models.User, error) {
 	ctx, span := r.tracer.Start(ctx, "UserRepository.Create")
 	defer span.End()
@@ -172,16 +160,14 @@ func (r *UserRepository) Create(ctx context.Context, req models.CreateUserReques
 	)
 
 	query := `
-		INSERT INTO users (name, email, bio) 
+		INSERT INTO users (name, email, bio)
 		VALUES (?, ?, ?)
 	`
 
-	// Record query metrics
 	start := time.Now()
 	result, err := r.db.ExecContext(ctx, query, req.Name, req.Email, req.Bio)
 	duration := time.Since(start)
 
-	// Record database metrics
 	r.db.RecordQueryMetrics(ctx, "INSERT", "users", duration, err)
 
 	if err != nil {
@@ -335,8 +321,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 	)
 
 	query := `
-		SELECT id, name, email, bio, created_at, updated_at 
-		FROM users 
+		SELECT id, name, email, bio, created_at, updated_at
+		FROM users
 		WHERE email = ?
 	`
 

@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"example/otel/internal/config"
+	"arquivolivre.com.br/otel/internal/config"
 
 	"github.com/XSAM/otelsql"
 	_ "github.com/go-sql-driver/mysql"
@@ -17,23 +17,19 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
-// DatabaseConnector interface for testability
 type DatabaseConnector interface {
 	Open(driverName, dataSourceName string, options ...otelsql.Option) (*sql.DB, error)
 	RegisterDBStatsMetrics(db *sql.DB, options ...otelsql.Option) error
 }
 
-// MeterProvider interface for testability  
 type MeterProvider interface {
 	Meter(name string, options ...metric.MeterOption) metric.Meter
 }
 
-// MetricsFactory creates OpenTelemetry metrics
 type MetricsFactory interface {
 	CreateMetrics(meter metric.Meter) (*DBMetrics, error)
 }
 
-// DBMetrics holds all database-related metrics
 type DBMetrics struct {
 	QueryDuration       metric.Float64Histogram
 	QueryCount          metric.Int64Counter
@@ -43,14 +39,12 @@ type DBMetrics struct {
 	HealthCheckDuration metric.Float64Histogram
 }
 
-// ConnectionConfig holds database connection configuration
 type ConnectionConfig struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
 }
 
-// DefaultConnectionConfig returns sensible defaults
 func DefaultConnectionConfig() ConnectionConfig {
 	return ConnectionConfig{
 		MaxOpenConns:    25,
@@ -59,7 +53,6 @@ func DefaultConnectionConfig() ConnectionConfig {
 	}
 }
 
-// DB holds the database connection with metrics
 type DB struct {
 	*sql.DB
 	meter               metric.Meter
@@ -71,7 +64,6 @@ type DB struct {
 	healthCheckDuration metric.Float64Histogram
 }
 
-// OtelDatabaseConnector implements DatabaseConnector using otelsql
 type OtelDatabaseConnector struct{}
 
 func (o *OtelDatabaseConnector) Open(driverName, dataSourceName string, options ...otelsql.Option) (*sql.DB, error) {
@@ -82,14 +74,12 @@ func (o *OtelDatabaseConnector) RegisterDBStatsMetrics(db *sql.DB, options ...ot
 	return otelsql.RegisterDBStatsMetrics(db, options...)
 }
 
-// OtelMeterProvider implements MeterProvider using otel
 type OtelMeterProvider struct{}
 
 func (o *OtelMeterProvider) Meter(name string, options ...metric.MeterOption) metric.Meter {
 	return otel.Meter(name, options...)
 }
 
-// DefaultMetricsFactory implements MetricsFactory
 type DefaultMetricsFactory struct{}
 
 func (f *DefaultMetricsFactory) CreateMetrics(meter metric.Meter) (*DBMetrics, error) {
@@ -153,7 +143,6 @@ func (f *DefaultMetricsFactory) CreateMetrics(meter metric.Meter) (*DBMetrics, e
 	}, nil
 }
 
-// NewConnection creates a new database connection with default providers
 func NewConnection(cfg *config.Config) (*DB, error) {
 	return NewConnectionWithDeps(
 		cfg,
@@ -164,7 +153,6 @@ func NewConnection(cfg *config.Config) (*DB, error) {
 	)
 }
 
-// NewConnectionWithDeps creates a new database connection with dependency injection for testing
 func NewConnectionWithDeps(
 	cfg *config.Config,
 	connector DatabaseConnector,
@@ -172,7 +160,6 @@ func NewConnectionWithDeps(
 	metricsFactory MetricsFactory,
 	connCfg ConnectionConfig,
 ) (*DB, error) {
-	// Open connection using the provided connector
 	db, err := connector.Open("mysql", cfg.Database.DSN,
 		otelsql.WithAttributes(
 			semconv.DBSystemMySQL,
@@ -191,13 +178,10 @@ func NewConnectionWithDeps(
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
 
-	// Configure connection pool
 	err = configureConnectionPool(db, connCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to configure connection pool: %w", err)
 	}
-
-	// Test the connection
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}

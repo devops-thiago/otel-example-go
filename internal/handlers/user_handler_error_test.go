@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"example/otel/internal/models"
+	"arquivolivre.com.br/otel/internal/models"
 
 	"github.com/stretchr/testify/assert"
 )

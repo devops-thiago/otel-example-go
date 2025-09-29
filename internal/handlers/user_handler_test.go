@@ -9,17 +9,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"example/otel/internal/models"
+	"arquivolivre.com.br/otel/internal/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-// mockUserStore implements repository.UserStore for tests
 type mockUserStore struct {
-	users       []models.User
-	nextID      int
-	failOnCall  map[string]bool
+	users      []models.User
+	nextID     int
+	failOnCall map[string]bool
 }
 
 func newMockUserStore() *mockUserStore {
@@ -160,8 +159,7 @@ func TestGetUserNotFound(t *testing.T) {
 
 func TestUpdateAndDeleteUser(t *testing.T) {
 	store := newMockUserStore()
-	// seed one
-	_, _ = store.Create(nil, models.CreateUserRequest{Name: "Bob", Email: "bob@example.com"})
+	_, _ = store.Create(context.TODO(), models.CreateUserRequest{Name: "Bob", Email: "bob@example.com"})
 
 	handler := NewUserHandler(store)
 	r := setupRouter(handler)
@@ -182,98 +180,95 @@ func TestUpdateAndDeleteUser(t *testing.T) {
 }
 
 func TestCreateUserInvalidPayload(t *testing.T) {
-    store := newMockUserStore()
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader([]byte("{invalid}")))
-    req.Header.Set("Content-Type", "application/json")
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusBadRequest, w.Code)
+	store := newMockUserStore()
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader([]byte("{invalid}")))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestCreateUserConflict(t *testing.T) {
-    store := newMockUserStore()
-    // seed
-    _, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "X", Email: "x@example.com"})
+	store := newMockUserStore()
+	_, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "X", Email: "x@example.com"})
 
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
 
-    body := models.CreateUserRequest{Name: "Y", Email: "x@example.com"}
-    b, _ := json.Marshal(body)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(b))
-    req.Header.Set("Content-Type", "application/json")
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusConflict, w.Code)
+	body := models.CreateUserRequest{Name: "Y", Email: "x@example.com"}
+	b, _ := json.Marshal(body)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusConflict, w.Code)
 }
 
 func TestUpdateUserEmailConflict(t *testing.T) {
-    store := newMockUserStore()
-    _, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "A", Email: "a@example.com"}) // id=1
-    _, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "B", Email: "b@example.com"}) // id=2
+	store := newMockUserStore()
+	_, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "A", Email: "a@example.com"}) // id=1
+	_, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "B", Email: "b@example.com"}) // id=2
 
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
 
-    newEmail := "a@example.com" // conflicts with id=1
-    upd := models.UpdateUserRequest{Email: &newEmail}
-    b, _ := json.Marshal(upd)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPut, "/api/users/2", bytes.NewReader(b))
-    req.Header.Set("Content-Type", "application/json")
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusConflict, w.Code)
+	newEmail := "a@example.com" // conflicts with id=1
+	upd := models.UpdateUserRequest{Email: &newEmail}
+	b, _ := json.Marshal(upd)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/users/2", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusConflict, w.Code)
 }
 
 func TestGetUserInvalidID(t *testing.T) {
-    store := newMockUserStore()
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
+	store := newMockUserStore()
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
 
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodGet, "/api/users/invalid", nil)
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusBadRequest, w.Code)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/users/invalid", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestGetUserSuccess(t *testing.T) {
-    store := newMockUserStore()
-    _, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "Alice", Email: "alice@example.com"})
-    
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
+	store := newMockUserStore()
+	_, _ = store.Create(context.Background(), models.CreateUserRequest{Name: "Alice", Email: "alice@example.com"})
 
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodGet, "/api/users/1", nil)
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusOK, w.Code)
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/users/1", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestUpdateUserInvalidID(t *testing.T) {
-    store := newMockUserStore()
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
+	store := newMockUserStore()
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
 
-    upd := models.UpdateUserRequest{Name: func() *string { s := "New Name"; return &s }()}
-    b, _ := json.Marshal(upd)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPut, "/api/users/invalid", bytes.NewReader(b))
-    req.Header.Set("Content-Type", "application/json")
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusBadRequest, w.Code)
+	upd := models.UpdateUserRequest{Name: func() *string { s := "New Name"; return &s }()}
+	b, _ := json.Marshal(upd)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/users/invalid", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestDeleteUserInvalidID(t *testing.T) {
-    store := newMockUserStore()
-    handler := NewUserHandler(store)
-    r := setupRouter(handler)
+	store := newMockUserStore()
+	handler := NewUserHandler(store)
+	r := setupRouter(handler)
 
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodDelete, "/api/users/invalid", nil)
-    r.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusBadRequest, w.Code)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodDelete, "/api/users/invalid", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
-
-

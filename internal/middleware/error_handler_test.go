@@ -29,7 +29,7 @@ func TestErrorHandler_BindError(t *testing.T) {
 	r := gin.New()
 	r.Use(ErrorHandler())
 	r.GET("/test", func(c *gin.Context) {
-		c.Error(&gin.Error{
+		_ = c.Error(&gin.Error{
 			Err:  assert.AnError,
 			Type: gin.ErrorTypeBind,
 		})
@@ -48,7 +48,7 @@ func TestErrorHandler_PublicError(t *testing.T) {
 	r := gin.New()
 	r.Use(ErrorHandler())
 	r.GET("/test", func(c *gin.Context) {
-		c.Error(&gin.Error{
+		_ = c.Error(&gin.Error{
 			Err:  assert.AnError,
 			Type: gin.ErrorTypePublic,
 		})
@@ -66,7 +66,7 @@ func TestErrorHandler_GenericError(t *testing.T) {
 	r := gin.New()
 	r.Use(ErrorHandler())
 	r.GET("/test", func(c *gin.Context) {
-		c.Error(&gin.Error{
+		_ = c.Error(&gin.Error{
 			Err:  assert.AnError,
 			Type: gin.ErrorTypeRender, // Different error type
 		})

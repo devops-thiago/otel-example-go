@@ -71,4 +71,4 @@ datasources:
           matcher: "trace_id"
           name: TraceID
           url: "$${__value.raw}"
-          urlDisplayLabel: 'View Trace' 
+          urlDisplayLabel: 'View Trace'

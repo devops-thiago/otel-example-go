@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"example/otel/internal/database"
-	"example/otel/internal/logging"
-	"example/otel/internal/middleware"
-	"example/otel/internal/repository"
+	"arquivolivre.com.br/otel/internal/database"
+	"arquivolivre.com.br/otel/internal/logging"
+	"arquivolivre.com.br/otel/internal/middleware"
+	"arquivolivre.com.br/otel/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,11 +29,11 @@ func SetupRoutes(db *database.DB) *gin.Engine {
 	router.Use(middleware.ErrorHandler())
 
 	// Initialize repositories
-    userRepo := repository.NewUserRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	// Initialize handlers
-    healthHandler := NewHealthHandler(db)
-    userHandler := NewUserHandler(userRepo)
+	healthHandler := NewHealthHandler(db)
+	userHandler := NewUserHandler(userRepo)
 	metricsHandler := NewMetricsHandler(db)
 
 	// Health check routes

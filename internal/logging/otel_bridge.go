@@ -43,7 +43,7 @@ func (hook *OtelHook) Fire(entry *logrus.Entry) error {
 	if hook.logger == nil {
 		return nil // silently skip if no logger provider
 	}
-	
+
 	// Convert logrus level to OpenTelemetry severity
 	severity := hook.convertLevel(entry.Level)
 

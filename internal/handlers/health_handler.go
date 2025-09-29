@@ -1,26 +1,26 @@
 package handlers
 
 import (
-    "net/http"
+	"net/http"
 
-    "example/otel/internal/models"
+	"arquivolivre.com.br/otel/internal/models"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 )
 
 // DBHealth defines the minimal contract used by the health handler
 type DBHealth interface {
-    Health() error
+	Health() error
 }
 
 // HealthHandler handles health check requests
 type HealthHandler struct {
-    db DBHealth
+	db DBHealth
 }
 
 // NewHealthHandler creates a new health handler
 func NewHealthHandler(db DBHealth) *HealthHandler {
-    return &HealthHandler{db: db}
+	return &HealthHandler{db: db}
 }
 
 // HealthCheck handles GET /health

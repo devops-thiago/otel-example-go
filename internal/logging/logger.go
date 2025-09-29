@@ -49,7 +49,7 @@ func NewLogger() *Logger {
 
 // WithTraceContext adds trace context to log entries
 func (l *Logger) WithTraceContext(ctx context.Context) *logrus.Entry {
-	entry := l.Logger.WithFields(logrus.Fields{})
+	entry := l.WithFields(logrus.Fields{})
 
 	// Extract trace information from context
 	span := trace.SpanFromContext(ctx)

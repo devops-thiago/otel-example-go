@@ -48,12 +48,20 @@ main
 
 # Test files
 *_test.go
+**/*_test.go
 test/
 tests/
+testdata/
+**/testdata/
+test_*.sh
+*.test
 
 # Coverage reports
 *.out
+coverage.out
 coverage.html
+*.cover
+*.coverprofile
 
 # Temporary files
 tmp/

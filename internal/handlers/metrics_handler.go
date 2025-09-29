@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"example/otel/internal/database"
+	"arquivolivre.com.br/otel/internal/database"
 
 	"github.com/gin-gonic/gin"
 )

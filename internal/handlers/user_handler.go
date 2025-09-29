@@ -6,41 +6,35 @@ import (
 	"strconv"
 	"strings"
 
-	"example/otel/internal/logging"
-	"example/otel/internal/middleware"
-	"example/otel/internal/models"
-	"example/otel/internal/repository"
+	"arquivolivre.com.br/otel/internal/logging"
+	"arquivolivre.com.br/otel/internal/middleware"
+	"arquivolivre.com.br/otel/internal/models"
+	"arquivolivre.com.br/otel/internal/repository"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
-// UserHandler handles user-related HTTP requests
 type UserHandler struct {
-    userRepo repository.UserStore
+	userRepo repository.UserStore
 }
 
-// NewUserHandler creates a new user handler
 func NewUserHandler(userRepo repository.UserStore) *UserHandler {
 	return &UserHandler{
 		userRepo: userRepo,
 	}
 }
 
-// GetUsers handles GET /api/users
 func (h *UserHandler) GetUsers(c *gin.Context) {
-	// Create custom span for this operation
 	span := trace.SpanFromContext(c.Request.Context())
 	span.SetAttributes(
 		attribute.String("handler", "GetUsers"),
 		attribute.String("operation", "list_users"),
 	)
 
-	// Log the request
 	logging.WithGinContext(c).Info("Getting users list")
 
-	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
@@ -53,7 +47,6 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 
 	offset := (page - 1) * limit
 
-	// Add pagination info to trace and logs
 	span.SetAttributes(
 		attribute.Int("pagination.page", page),
 		attribute.Int("pagination.limit", limit),
@@ -66,7 +59,6 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 		attribute.Int("offset", offset),
 	)
 
-	// Get users from repository
 	users, err := h.userRepo.GetAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		logging.LogError(c.Request.Context(), err, "Failed to retrieve users from database", map[string]interface{}{
@@ -84,7 +76,6 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 
 	middleware.AddSpanEvent(c, "users_retrieved", attribute.Int("count", len(users)))
 
-	// Get total count for pagination
 	total, err := h.userRepo.Count(c.Request.Context())
 	if err != nil {
 		logging.LogError(c.Request.Context(), err, "Failed to count users in database", nil)
@@ -98,23 +89,19 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 
 	middleware.AddSpanEvent(c, "total_count_retrieved", attribute.Int("total", total))
 
-	// Convert to response format
 	userResponses := make([]models.UserResponse, len(users))
 	for i, user := range users {
 		userResponses[i] = user.ToResponse()
 	}
 
-	// Calculate pagination metadata
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
 
-	// Add result metrics to trace
 	span.SetAttributes(
 		attribute.Int("result.users_count", len(users)),
 		attribute.Int("result.total_count", total),
 		attribute.Int("result.total_pages", totalPages),
 	)
 
-	// Log successful response
 	logging.WithGinContext(c).WithFields(map[string]interface{}{
 		"users_count": len(users),
 		"total_count": total,
@@ -136,7 +123,6 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetUser handles GET /api/users/:id
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -170,7 +156,6 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	})
 }
 
-// CreateUser handles POST /api/users
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req models.CreateUserRequest
 
@@ -182,7 +167,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Check if email already exists
 	existingUser, _ := h.userRepo.GetByEmail(c.Request.Context(), req.Email)
 	if existingUser != nil {
 		c.JSON(http.StatusConflict, models.ErrorResponse{

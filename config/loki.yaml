@@ -54,4 +54,4 @@ limits_config:
   per_stream_rate_limit_burst: 15MB
 
 analytics:
-  reporting_enabled: false 
+  reporting_enabled: false

@@ -13,7 +13,7 @@ func TestStartConnectionMonitoring(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sqlmock new: %v", err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	d := &DB{DB: sqlDB}
 
@@ -32,7 +32,7 @@ func TestGetDetailedStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sqlmock new: %v", err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	d := &DB{DB: sqlDB}
 
@@ -43,12 +43,12 @@ func TestGetDetailedStats(t *testing.T) {
 
 	expectedFields := []string{
 		"open_connections",
-		"in_use", 
+		"in_use",
 		"idle",
 		"wait_count",
 		"wait_duration",
 		"max_idle_closed",
-		"max_idle_time_closed", 
+		"max_idle_time_closed",
 		"max_lifetime_closed",
 	}
 

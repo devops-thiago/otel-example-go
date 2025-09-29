@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"example/otel/internal/models"
+	"arquivolivre.com.br/otel/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
