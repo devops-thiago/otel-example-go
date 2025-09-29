@@ -297,6 +297,7 @@ func (r *UserRepository) Count(ctx context.Context) (int, error) {
 
 	var count int
 	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	r.db.RecordQueryMetrics(ctx, query, err)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count users: %w", err)
 	}
