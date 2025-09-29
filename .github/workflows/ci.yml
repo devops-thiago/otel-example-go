@@ -157,8 +157,16 @@ jobs:
           context: .
           push: false
           tags: otel-example-go:pr-${{ github.event.pull_request.number }}
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify Docker image was built
+        run: |
+          echo "Listing Docker images:"
+          docker images
+          echo "Checking if our image exists:"
+          docker inspect otel-example-go:pr-${{ github.event.pull_request.number }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -166,6 +174,9 @@ jobs:
           image-ref: otel-example-go:pr-${{ github.event.pull_request.number }}
           format: 'sarif'
           output: 'trivy-results.sarif'
+          skip-files: '/usr/share/zoneinfo/**'
+        env:
+          TRIVY_SKIP_VERSION_CHECK: true
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
