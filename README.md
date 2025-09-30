@@ -408,14 +408,24 @@ go test ./internal/handlers -v
 
 # Run tests with race detection
 go test -race ./...
+
+# Generate coverage report for SonarCloud
+./scripts/coverage.sh
 ```
+
+### Test Coverage
+
+- **Current Coverage**: ~80% (see [SonarCloud dashboard](https://sonarcloud.io/summary/new_code?id=devops-thiago_otel-example-go))
+- **Coverage Reports**: Automatically sent to SonarCloud and Codecov
+- **Target**: >80% coverage for business logic
+- **Exclusions**: Test files, vendor, and generated code
 
 ### Test Structure
 
 - Unit tests: `*_test.go` files alongside source code
 - Mocks: Using interfaces for dependency injection
 - Integration tests: Testing HTTP endpoints with httptest
-- Test coverage: Aiming for >80% coverage
+- Test coverage: Monitored via SonarCloud and Codecov
 
 ## 🤝 Contributing
 
