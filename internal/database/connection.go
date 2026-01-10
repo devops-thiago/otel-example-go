@@ -71,7 +71,8 @@ func (o *OtelDatabaseConnector) Open(driverName, dataSourceName string, options 
 }
 
 func (o *OtelDatabaseConnector) RegisterDBStatsMetrics(db *sql.DB, options ...otelsql.Option) error {
-	return otelsql.RegisterDBStatsMetrics(db, options...)
+	_, err := otelsql.RegisterDBStatsMetrics(db, options...)
+	return err
 }
 
 type OtelMeterProvider struct{}

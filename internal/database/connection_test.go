@@ -426,12 +426,31 @@ func TestDefaultMetricsFactory_CreateMetrics_Success(t *testing.T) {
 }
 
 // Test the real implementations
-func TestOtelDatabaseConnector_Methods(t *testing.T) {
+func TestOtelDatabaseConnector_Open(t *testing.T) {
 	connector := &OtelDatabaseConnector{}
 
-	// Just test that the methods exist and can be called
-	// We don't test actual functionality since that would require real DB connections
-	_ = connector
+	// Test with invalid DSN - should return error
+	_, err := connector.Open("mysql", "invalid-dsn")
+	if err == nil {
+		t.Error("expected error with invalid DSN")
+	}
+}
+
+func TestOtelDatabaseConnector_RegisterDBStatsMetrics(t *testing.T) {
+	connector := &OtelDatabaseConnector{}
+
+	// Use sqlmock to create a test DB
+	sqlDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock new: %v", err)
+	}
+	defer func() { _ = sqlDB.Close() }()
+
+	// RegisterDBStatsMetrics should work with a valid DB connection
+	err = connector.RegisterDBStatsMetrics(sqlDB)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
 }
 
 func TestOtelMeterProvider_Methods(t *testing.T) {
