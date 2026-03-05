@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/devops-thiago/otel-example-go)](LICENSE)
 [![Codecov](https://img.shields.io/codecov/c/github/devops-thiago/otel-example-go?label=coverage)](https://app.codecov.io/gh/devops-thiago/otel-example-go)
 [![Sonar Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=devops-thiago_otel-example-go&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=devops-thiago_otel-example-go)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=devops-thiago_otel-example-go&metric=coverage)](https://sonarcloud.io/summary/new_code?id=devops-thiago_otel-example-go)
+[![Sonar Coverage](https://sonarcloud.io/api/project_badges/measure?project=devops-thiago_otel-example-go&metric=coverage)](https://sonarcloud.io/summary/new_code?id=devops-thiago_otel-example-go)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-enabled-blue?logo=opentelemetry)](https://opentelemetry.io)
 [![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com)
 [![Docker Hub](https://img.shields.io/docker/v/thiagosg/otel-crud-api-go?logo=docker&label=Docker%20Hub)](https://hub.docker.com/r/thiagosg/otel-crud-api-go)
