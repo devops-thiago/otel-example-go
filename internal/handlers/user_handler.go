@@ -276,8 +276,5 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponse{
-		Success: true,
-		Message: "User deleted successfully",
-	})
+	c.Status(http.StatusNoContent)
 }

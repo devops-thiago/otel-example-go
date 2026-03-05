@@ -176,7 +176,8 @@ func TestUpdateAndDeleteUser(t *testing.T) {
 	w2 := httptest.NewRecorder()
 	req2 := httptest.NewRequest(http.MethodDelete, "/api/users/1", nil)
 	r.ServeHTTP(w2, req2)
-	assert.Equal(t, http.StatusOK, w2.Code)
+	assert.Equal(t, http.StatusNoContent, w2.Code)
+	assert.Equal(t, "", w2.Body.String())
 }
 
 func TestCreateUserInvalidPayload(t *testing.T) {
