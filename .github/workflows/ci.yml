@@ -10,6 +10,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Least-privilege default token for all jobs (CodeQL: missing-workflow-permissions).
+# Jobs that need more (e.g. coverage publishing) declare their own permissions block.
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
