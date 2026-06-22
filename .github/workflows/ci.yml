@@ -137,6 +137,7 @@ jobs:
             -Dsonar.projectKey=devops-thiago_otel-example-go
             -Dsonar.organization=devops-thiago
             -Dsonar.go.coverage.reportPaths=coverage.out
+            -Dsonar.exclusions=**/.github/**
         if: ${{ env.SONAR_TOKEN != '' }}
 
   docker-build:
